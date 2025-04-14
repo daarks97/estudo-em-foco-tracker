@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useEstudos } from '@/contexts/EstudosContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,6 +9,7 @@ import {
   PopoverTrigger 
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { 
@@ -17,12 +17,15 @@ import {
   Clock, 
   Baby, 
   Scale, 
-  Brain
+  Brain,
+  Search,
+  Filter
 } from 'lucide-react';
 
 const ListaTemas = () => {
   const { temasFiltrados, marcarConcluido, categorias, atualizarNivelAprendizado } = useEstudos();
-
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const hoje = new Date();
 
   const getNomeCategoria = (categoriaId: string) => {
@@ -72,15 +75,38 @@ const ListaTemas = () => {
     }
   };
 
+  // Filter topics based on search term
+  const filteredTemas = searchTerm.trim() === '' 
+    ? temasFiltrados 
+    : temasFiltrados.filter(tema => 
+        tema.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getNomeCategoria(tema.categoria).toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-estudo-text">Temas de Estudo</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-estudo-text">Temas de Estudo</h2>
+        
+        <div className="relative w-full max-w-xs">
+          <Input
+            type="text"
+            placeholder="Buscar temas..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 w-full"
+          />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 gap-4">
-        {temasFiltrados.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">Nenhum tema encontrado.</p>
+        {filteredTemas.length === 0 ? (
+          <p className="text-gray-500 text-center py-8">
+            {searchTerm.trim() !== '' ? 'Nenhum tema encontrado para esta busca.' : 'Nenhum tema encontrado.'}
+          </p>
         ) : (
-          temasFiltrados.map((tema) => (
+          filteredTemas.map((tema) => (
             <Card 
               key={tema.id} 
               className={`hover:shadow-md transition-shadow ${

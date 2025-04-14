@@ -134,7 +134,12 @@ interface EstudosContextType {
   marcarRevisaoConcluida: (temaId: string, revisaoId: string, concluida: boolean, status?: 'sucesso' | 'incompleta') => void;
   adicionarTema: (tema: Omit<TemaEstudo, 'id' | 'revisoes'>) => void;
   filtrarPorCategoria: (categoriaId: string | null) => void;
+  filtrarPorPrioridade: (prioridade: 'baixa' | 'media' | 'alta' | null) => void;
+  filtrarPorNivelAprendizado: (nivel: 'iniciado' | 'reforcando' | 'dominado' | null) => void;
+  resetarFiltros: () => void;
   categoriaAtual: string | null;
+  prioridadeAtual: 'baixa' | 'media' | 'alta' | null;
+  nivelAprendizadoAtual: 'iniciado' | 'reforcando' | 'dominado' | null;
   temasFiltrados: TemaEstudo[];
   obterRevisoesHoje: () => { 
     temaId: string; 
@@ -162,19 +167,45 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [temas, setTemas] = useState<TemaEstudo[]>(temasIniciais);
   const [categorias] = useState<Categoria[]>(categoriasIniciais);
   const [categoriaAtual, setCategoriaAtual] = useState<string | null>(null);
+  const [prioridadeAtual, setPrioridadeAtual] = useState<'baixa' | 'media' | 'alta' | null>(null);
+  const [nivelAprendizadoAtual, setNivelAprendizadoAtual] = useState<'iniciado' | 'reforcando' | 'dominado' | null>(null);
   const [temasFiltrados, setTemasFiltrados] = useState<TemaEstudo[]>(temas);
 
   const filtrarPorCategoria = (categoriaId: string | null) => {
     setCategoriaAtual(categoriaId);
   };
 
+  const filtrarPorPrioridade = (prioridade: 'baixa' | 'media' | 'alta' | null) => {
+    setPrioridadeAtual(prioridade);
+  };
+
+  const filtrarPorNivelAprendizado = (nivel: 'iniciado' | 'reforcando' | 'dominado' | null) => {
+    setNivelAprendizadoAtual(nivel);
+  };
+
+  const resetarFiltros = () => {
+    setCategoriaAtual(null);
+    setPrioridadeAtual(null);
+    setNivelAprendizadoAtual(null);
+  };
+
   useEffect(() => {
+    let filtrados = [...temas];
+    
     if (categoriaAtual) {
-      setTemasFiltrados(temas.filter(tema => tema.categoria === categoriaAtual));
-    } else {
-      setTemasFiltrados(temas);
+      filtrados = filtrados.filter(tema => tema.categoria === categoriaAtual);
     }
-  }, [categoriaAtual, temas]);
+    
+    if (prioridadeAtual) {
+      filtrados = filtrados.filter(tema => tema.prioridade === prioridadeAtual);
+    }
+    
+    if (nivelAprendizadoAtual) {
+      filtrados = filtrados.filter(tema => tema.nivelAprendizado === nivelAprendizadoAtual);
+    }
+    
+    setTemasFiltrados(filtrados);
+  }, [categoriaAtual, prioridadeAtual, nivelAprendizadoAtual, temas]);
 
   const marcarConcluido = (id: string, concluido: boolean) => {
     setTemas(prevTemas => prevTemas.map(tema => {
@@ -338,7 +369,12 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       marcarRevisaoConcluida,
       adicionarTema,
       filtrarPorCategoria,
+      filtrarPorPrioridade,
+      filtrarPorNivelAprendizado,
+      resetarFiltros,
       categoriaAtual,
+      prioridadeAtual,
+      nivelAprendizadoAtual,
       temasFiltrados,
       obterRevisoesHoje,
       obterRevisoesAtrasadas,

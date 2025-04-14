@@ -5,6 +5,7 @@ import Header from '@/components/Header';
 import Dashboard from '@/components/Dashboard';
 import CategoriasFiltro from '@/components/CategoriasFiltro';
 import ListaTemas from '@/components/ListaTemas';
+import FiltrosAvancados from '@/components/FiltrosAvancados';
 
 const Index = () => {
   return (
@@ -17,6 +18,7 @@ const Index = () => {
           
           <div className="mt-8 bg-white rounded-lg shadow-md p-6">
             <CategoriasFiltro />
+            <FiltrosAvancados />
             <ListaTemas />
           </div>
         </main>
