@@ -26,14 +26,16 @@ export default {
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
                 estudo: {
-                    primary: '#9b87f5',
-                    secondary: '#7E69AB',
-                    light: '#E5DEFF',
-                    background: '#F9F8FF',
-                    text: '#1A1F2C',
-                    accent: '#8B5CF6',
-                    warning: '#F59E0B',
-                    success: '#10B981',
+                    primary: '#007AFF', // Apple blue
+                    secondary: '#5856D6', // Apple purple
+                    light: '#E5F2FF',
+                    background: '#F5F5F7', // Apple light background
+                    text: '#1D1D1F', // Apple dark text
+                    accent: '#34C759', // Apple green
+                    warning: '#FF9500', // Apple orange
+                    success: '#34C759', // Apple green
+                    danger: '#FF3B30', // Apple red
+                    gray: '#8E8E93', // Apple gray
                 },
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
@@ -79,6 +81,13 @@ export default {
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
 			},
+			fontFamily: {
+				sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+			},
+			boxShadow: {
+				'apple': '0 4px 15px rgba(0, 0, 0, 0.05)',
+				'apple-hover': '0 6px 20px rgba(0, 0, 0, 0.08)',
+			},
 			keyframes: {
 				'accordion-down': {
 					from: {
@@ -95,11 +104,21 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': { opacity: '0', transform: 'translateY(10px)' },
+					'100%': { opacity: '1', transform: 'translateY(0)' }
+				},
+				'scale-in': {
+					'0%': { transform: 'scale(0.95)', opacity: '0' },
+					'100%': { transform: 'scale(1)', opacity: '1' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'scale-in': 'scale-in 0.2s ease-out'
 			}
 		}
 	},

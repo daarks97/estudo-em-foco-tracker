@@ -14,8 +14,8 @@ const Dashboard = () => {
   
   // Dados para o gráfico de pizza
   const data = [
-    { name: 'Concluídos', value: temasConcluidos, color: '#10B981' },
-    { name: 'Em andamento', value: temasEmAndamento, color: '#9b87f5' }
+    { name: 'Concluídos', value: temasConcluidos, color: '#34C759' }, // Apple green
+    { name: 'Em andamento', value: temasEmAndamento, color: '#007AFF' } // Apple blue
   ];
 
   // Verificar temas atrasados (data limite no passado e não concluídos)
@@ -30,60 +30,66 @@ const Dashboard = () => {
   const temasPrioridadeBaixa = temas.filter(tema => tema.prioridade === 'baixa' && !tema.concluido).length;
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4">
-      <h2 className="text-xl font-semibold mb-4 text-estudo-text">Resumo de Estudos</h2>
+    <div className="bg-white rounded-2xl shadow-apple p-6 animate-scale-in">
+      <h2 className="text-xl font-medium mb-6 text-estudo-text">Resumo de Estudos</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-estudo-light rounded-lg p-4 text-center">
-          <h3 className="text-sm text-estudo-secondary font-medium">Progresso Geral</h3>
-          <div className="text-3xl font-bold text-estudo-primary mt-2">{progresso}%</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-estudo-light rounded-2xl p-5 text-center transition-transform hover:scale-[1.02] duration-200">
+          <h3 className="text-sm font-medium text-estudo-primary mb-2">Progresso Geral</h3>
+          <div className="text-3xl font-semibold text-estudo-primary">{progresso}%</div>
         </div>
         
-        <div className="bg-estudo-light rounded-lg p-4 text-center">
-          <h3 className="text-sm text-estudo-secondary font-medium">Temas Concluídos</h3>
-          <div className="text-3xl font-bold text-estudo-primary mt-2">
-            {temasConcluidos} <span className="text-sm text-estudo-secondary">/ {totalTemas}</span>
+        <div className="bg-estudo-light rounded-2xl p-5 text-center transition-transform hover:scale-[1.02] duration-200">
+          <h3 className="text-sm font-medium text-estudo-primary mb-2">Temas Concluídos</h3>
+          <div className="text-3xl font-semibold text-estudo-primary">
+            {temasConcluidos} <span className="text-sm text-estudo-gray">/ {totalTemas}</span>
           </div>
         </div>
         
-        <div className="bg-amber-50 rounded-lg p-4 text-center">
-          <h3 className="text-sm text-amber-700 font-medium">Temas Atrasados</h3>
-          <div className="text-3xl font-bold text-amber-600 mt-2">{temasAtrasados}</div>
+        <div className="bg-[#FFF5EB] rounded-2xl p-5 text-center transition-transform hover:scale-[1.02] duration-200">
+          <h3 className="text-sm font-medium text-[#FF9500] mb-2">Temas Atrasados</h3>
+          <div className="text-3xl font-semibold text-[#FF9500]">{temasAtrasados}</div>
         </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <h3 className="text-md font-semibold mb-2 text-estudo-text">Temas por Prioridade</h3>
-          <div className="bg-estudo-background p-3 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm">Alta</span>
-              <span className="text-sm font-medium">{temasPrioridadeAlta}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div className="bg-red-500 h-2.5 rounded-full" style={{ width: `${(temasPrioridadeAlta / totalTemas) * 100}%` }}></div>
-            </div>
-            
-            <div className="flex justify-between items-center mb-2 mt-4">
-              <span className="text-sm">Média</span>
-              <span className="text-sm font-medium">{temasPrioridadeMedia}</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: `${(temasPrioridadeMedia / totalTemas) * 100}%` }}></div>
+          <h3 className="text-md font-medium mb-4 text-estudo-text">Temas por Prioridade</h3>
+          <div className="space-y-5">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm">Alta</span>
+                <span className="text-sm font-medium">{temasPrioridadeAlta}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div className="bg-[#FF3B30] h-2 rounded-full" style={{ width: `${(temasPrioridadeAlta / totalTemas) * 100}%` }}></div>
+              </div>
             </div>
             
-            <div className="flex justify-between items-center mb-2 mt-4">
-              <span className="text-sm">Baixa</span>
-              <span className="text-sm font-medium">{temasPrioridadeBaixa}</span>
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm">Média</span>
+                <span className="text-sm font-medium">{temasPrioridadeMedia}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div className="bg-[#FF9500] h-2 rounded-full" style={{ width: `${(temasPrioridadeMedia / totalTemas) * 100}%` }}></div>
+              </div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5">
-              <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${(temasPrioridadeBaixa / totalTemas) * 100}%` }}></div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm">Baixa</span>
+                <span className="text-sm font-medium">{temasPrioridadeBaixa}</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2">
+                <div className="bg-[#007AFF] h-2 rounded-full" style={{ width: `${(temasPrioridadeBaixa / totalTemas) * 100}%` }}></div>
+              </div>
             </div>
           </div>
         </div>
         
         <div>
-          <h3 className="text-md font-semibold mb-2 text-estudo-text">Status dos Estudos</h3>
+          <h3 className="text-md font-medium mb-4 text-estudo-text">Status dos Estudos</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>

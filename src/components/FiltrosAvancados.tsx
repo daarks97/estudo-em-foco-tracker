@@ -31,19 +31,19 @@ const FiltrosAvancados = () => {
   const temFiltrosAtivos = categoriaAtual || prioridadeAtual || nivelAprendizadoAtual;
 
   return (
-    <div className="mb-4 flex items-center gap-2 flex-wrap">
+    <div className="mb-6 flex items-center gap-2 flex-wrap">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Filter className="h-4 w-4" />
-            <span>Filtros</span>
+          <Button variant="outline" size="sm" className="rounded-full flex items-center gap-1 border border-gray-200 shadow-sm">
+            <Filter className="h-4 w-4 text-estudo-primary" />
+            <span className="text-estudo-text">Filtros</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-4" align="start">
-          <div className="space-y-4">
+        <PopoverContent className="w-80 p-5 rounded-2xl shadow-apple" align="start">
+          <div className="space-y-5">
             <div>
-              <h3 className="font-medium text-sm mb-2 flex items-center">
-                <Book className="h-4 w-4 mr-1" />
+              <h3 className="font-medium text-sm mb-3 flex items-center text-estudo-text">
+                <Book className="h-4 w-4 mr-2 text-estudo-primary" />
                 Categorias
               </h3>
               <div className="flex flex-wrap gap-2">
@@ -51,7 +51,11 @@ const FiltrosAvancados = () => {
                   <Badge 
                     key={categoria.id}
                     variant={categoriaAtual === categoria.id ? "default" : "outline"}
-                    className="cursor-pointer"
+                    className={`cursor-pointer rounded-full px-3 py-1 ${
+                      categoriaAtual === categoria.id 
+                        ? 'bg-estudo-primary text-white hover:bg-estudo-primary/90' 
+                        : 'bg-gray-50 text-estudo-text hover:bg-gray-100'
+                    }`}
                     onClick={() => filtrarPorCategoria(categoriaAtual === categoria.id ? null : categoria.id)}
                   >
                     {categoria.emoji} {categoria.nome}
@@ -61,28 +65,40 @@ const FiltrosAvancados = () => {
             </div>
 
             <div>
-              <h3 className="font-medium text-sm mb-2 flex items-center">
-                <Flag className="h-4 w-4 mr-1" />
+              <h3 className="font-medium text-sm mb-3 flex items-center text-estudo-text">
+                <Flag className="h-4 w-4 mr-2 text-estudo-primary" />
                 Prioridade
               </h3>
               <div className="flex gap-2">
                 <Badge 
                   variant={prioridadeAtual === 'alta' ? "default" : "outline"}
-                  className="cursor-pointer bg-red-100 text-red-800 border-red-200 hover:bg-red-200"
+                  className={`cursor-pointer rounded-full px-3 py-1 ${
+                    prioridadeAtual === 'alta' 
+                      ? 'bg-[#FF3B30] text-white hover:bg-[#FF3B30]/90' 
+                      : 'bg-[#FFEFED] text-[#FF3B30] hover:bg-[#FFEFED]/80'
+                  }`}
                   onClick={() => filtrarPorPrioridade(prioridadeAtual === 'alta' ? null : 'alta')}
                 >
                   Alta
                 </Badge>
                 <Badge 
                   variant={prioridadeAtual === 'media' ? "default" : "outline"}
-                  className="cursor-pointer bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200"
+                  className={`cursor-pointer rounded-full px-3 py-1 ${
+                    prioridadeAtual === 'media' 
+                      ? 'bg-[#FF9500] text-white hover:bg-[#FF9500]/90' 
+                      : 'bg-[#FFF5EB] text-[#FF9500] hover:bg-[#FFF5EB]/80'
+                  }`}
                   onClick={() => filtrarPorPrioridade(prioridadeAtual === 'media' ? null : 'media')}
                 >
                   Média
                 </Badge>
                 <Badge 
                   variant={prioridadeAtual === 'baixa' ? "default" : "outline"}
-                  className="cursor-pointer bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200"
+                  className={`cursor-pointer rounded-full px-3 py-1 ${
+                    prioridadeAtual === 'baixa' 
+                      ? 'bg-[#007AFF] text-white hover:bg-[#007AFF]/90' 
+                      : 'bg-[#E5F2FF] text-[#007AFF] hover:bg-[#E5F2FF]/80'
+                  }`}
                   onClick={() => filtrarPorPrioridade(prioridadeAtual === 'baixa' ? null : 'baixa')}
                 >
                   Baixa
@@ -91,28 +107,40 @@ const FiltrosAvancados = () => {
             </div>
 
             <div>
-              <h3 className="font-medium text-sm mb-2 flex items-center">
-                <Brain className="h-4 w-4 mr-1" />
+              <h3 className="font-medium text-sm mb-3 flex items-center text-estudo-text">
+                <Brain className="h-4 w-4 mr-2 text-estudo-primary" />
                 Nível de aprendizado
               </h3>
               <div className="flex gap-2">
                 <Badge 
                   variant={nivelAprendizadoAtual === 'iniciado' ? "default" : "outline"}
-                  className="cursor-pointer bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200"
+                  className={`cursor-pointer rounded-full px-3 py-1 ${
+                    nivelAprendizadoAtual === 'iniciado' 
+                      ? 'bg-[#007AFF] text-white hover:bg-[#007AFF]/90' 
+                      : 'bg-[#E5F2FF] text-[#007AFF] hover:bg-[#E5F2FF]/80'
+                  }`}
                   onClick={() => filtrarPorNivelAprendizado(nivelAprendizadoAtual === 'iniciado' ? null : 'iniciado')}
                 >
                   Iniciado
                 </Badge>
                 <Badge 
                   variant={nivelAprendizadoAtual === 'reforcando' ? "default" : "outline"}
-                  className="cursor-pointer bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-200"
+                  className={`cursor-pointer rounded-full px-3 py-1 ${
+                    nivelAprendizadoAtual === 'reforcando' 
+                      ? 'bg-[#FF9500] text-white hover:bg-[#FF9500]/90' 
+                      : 'bg-[#FFF5EB] text-[#FF9500] hover:bg-[#FFF5EB]/80'
+                  }`}
                   onClick={() => filtrarPorNivelAprendizado(nivelAprendizadoAtual === 'reforcando' ? null : 'reforcando')}
                 >
                   Reforçando
                 </Badge>
                 <Badge 
                   variant={nivelAprendizadoAtual === 'dominado' ? "default" : "outline"}
-                  className="cursor-pointer bg-green-100 text-green-800 border-green-200 hover:bg-green-200"
+                  className={`cursor-pointer rounded-full px-3 py-1 ${
+                    nivelAprendizadoAtual === 'dominado' 
+                      ? 'bg-[#34C759] text-white hover:bg-[#34C759]/90' 
+                      : 'bg-[#E3F8E9] text-[#34C759] hover:bg-[#E3F8E9]/80'
+                  }`}
                   onClick={() => filtrarPorNivelAprendizado(nivelAprendizadoAtual === 'dominado' ? null : 'dominado')}
                 >
                   Dominei
@@ -121,11 +149,11 @@ const FiltrosAvancados = () => {
             </div>
 
             {temFiltrosAtivos && (
-              <div className="pt-2 border-t">
+              <div className="pt-3 border-t border-gray-100">
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="w-full justify-center text-red-600"
+                  className="w-full justify-center text-[#FF3B30] hover:bg-[#FFEFED] hover:text-[#FF3B30]"
                   onClick={resetarFiltros}
                 >
                   <X className="h-4 w-4 mr-1" />
@@ -139,14 +167,14 @@ const FiltrosAvancados = () => {
 
       {temFiltrosAtivos && (
         <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-gray-500">Filtros ativos:</span>
+          <span className="text-sm text-estudo-gray">Filtros ativos:</span>
           
           {categoriaAtual && (
-            <Badge variant="secondary" className="flex items-center gap-1">
+            <Badge variant="secondary" className="flex items-center gap-1 bg-gray-50 text-estudo-text rounded-full">
               {categorias.find(c => c.id === categoriaAtual)?.emoji}{' '}
               {categorias.find(c => c.id === categoriaAtual)?.nome}
               <X 
-                className="h-3 w-3 ml-1 cursor-pointer" 
+                className="h-3 w-3 ml-1 cursor-pointer text-estudo-gray" 
                 onClick={() => filtrarPorCategoria(null)}
               />
             </Badge>
@@ -155,9 +183,10 @@ const FiltrosAvancados = () => {
           {prioridadeAtual && (
             <Badge 
               variant="secondary" 
-              className={`flex items-center gap-1 ${
-                prioridadeAtual === 'alta' ? 'bg-red-100' : 
-                prioridadeAtual === 'media' ? 'bg-amber-100' : 'bg-blue-100'
+              className={`flex items-center gap-1 rounded-full ${
+                prioridadeAtual === 'alta' ? 'bg-[#FFEFED] text-[#FF3B30]' : 
+                prioridadeAtual === 'media' ? 'bg-[#FFF5EB] text-[#FF9500]' : 
+                'bg-[#E5F2FF] text-[#007AFF]'
               }`}
             >
               Prioridade: {prioridadeAtual.charAt(0).toUpperCase() + prioridadeAtual.slice(1)}
@@ -171,9 +200,10 @@ const FiltrosAvancados = () => {
           {nivelAprendizadoAtual && (
             <Badge 
               variant="secondary" 
-              className={`flex items-center gap-1 ${
-                nivelAprendizadoAtual === 'iniciado' ? 'bg-blue-100' : 
-                nivelAprendizadoAtual === 'reforcando' ? 'bg-amber-100' : 'bg-green-100'
+              className={`flex items-center gap-1 rounded-full ${
+                nivelAprendizadoAtual === 'iniciado' ? 'bg-[#E5F2FF] text-[#007AFF]' : 
+                nivelAprendizadoAtual === 'reforcando' ? 'bg-[#FFF5EB] text-[#FF9500]' : 
+                'bg-[#E3F8E9] text-[#34C759]'
               }`}
             >
               Nível: {nivelAprendizadoAtual.charAt(0).toUpperCase() + nivelAprendizadoAtual.slice(1)}
@@ -187,7 +217,7 @@ const FiltrosAvancados = () => {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-7 px-2 text-red-600"
+            className="h-7 px-2 text-[#FF3B30] hover:bg-[#FFEFED] rounded-full"
             onClick={resetarFiltros}
           >
             Limpar todos

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useEstudos } from '@/contexts/EstudosContext';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,8 +19,7 @@ import {
   Baby, 
   Scale, 
   Brain,
-  Search,
-  Filter
+  Search
 } from 'lucide-react';
 
 const ListaTemas = () => {
@@ -36,11 +36,11 @@ const ListaTemas = () => {
   const getPrioridadeBadge = (prioridade: string) => {
     switch (prioridade) {
       case 'alta':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">Alta</Badge>;
+        return <Badge variant="outline" className="bg-[#FFEFED] text-[#FF3B30] rounded-full">Alta</Badge>;
       case 'media':
-        return <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">Média</Badge>;
+        return <Badge variant="outline" className="bg-[#FFF5EB] text-[#FF9500] rounded-full">Média</Badge>;
       case 'baixa':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Baixa</Badge>;
+        return <Badge variant="outline" className="bg-[#E5F2FF] text-[#007AFF] rounded-full">Baixa</Badge>;
       default:
         return null;
     }
@@ -54,19 +54,19 @@ const ListaTemas = () => {
     switch (nivel) {
       case 'iniciado':
         return (
-          <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 flex items-center">
+          <Badge variant="outline" className="bg-[#E5F2FF] text-[#007AFF] rounded-full flex items-center">
             <Baby size={14} className="mr-1" /> Iniciado
           </Badge>
         );
       case 'reforcando':
         return (
-          <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200 flex items-center">
+          <Badge variant="outline" className="bg-[#FFF5EB] text-[#FF9500] rounded-full flex items-center">
             <Scale size={14} className="mr-1" /> Reforçando
           </Badge>
         );
       case 'dominado':
         return (
-          <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 flex items-center">
+          <Badge variant="outline" className="bg-[#E3F8E9] text-[#34C759] rounded-full flex items-center">
             <Brain size={14} className="mr-1" /> Dominei
           </Badge>
         );
@@ -85,8 +85,8 @@ const ListaTemas = () => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-estudo-text">Temas de Estudo</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-medium text-estudo-text">Temas de Estudo</h2>
         
         <div className="relative w-full max-w-xs">
           <Input
@@ -94,39 +94,46 @@ const ListaTemas = () => {
             placeholder="Buscar temas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 w-full"
+            className="pl-9 w-full rounded-full border border-gray-200"
           />
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-estudo-gray" />
         </div>
       </div>
       
       <div className="grid grid-cols-1 gap-4">
         {filteredTemas.length === 0 ? (
-          <p className="text-gray-500 text-center py-8">
-            {searchTerm.trim() !== '' ? 'Nenhum tema encontrado para esta busca.' : 'Nenhum tema encontrado.'}
-          </p>
+          <div className="text-center py-10">
+            <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-3">
+              <Search className="h-8 w-8 text-estudo-gray" />
+            </div>
+            <p className="text-estudo-gray">
+              {searchTerm.trim() !== '' ? 'Nenhum tema encontrado para esta busca.' : 'Nenhum tema encontrado.'}
+            </p>
+          </div>
         ) : (
           filteredTemas.map((tema) => (
             <Card 
               key={tema.id} 
-              className={`hover:shadow-md transition-shadow ${
+              className={`hover:shadow-apple-hover transition-all duration-200 rounded-xl ${
                 tema.concluido 
-                  ? 'bg-green-50 border-green-100' 
+                  ? 'bg-[#F2FFF5] border-[#D1F2D9]' 
                   : isAtrasado(tema)
-                  ? 'bg-red-50 border-red-100'
+                  ? 'bg-[#FFEFED] border-[#FFD7D5]'
                   : 'bg-white'
               }`}
             >
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <Checkbox 
-                    id={`tema-${tema.id}`}
-                    checked={tema.concluido}
-                    onCheckedChange={(checked) => {
-                      marcarConcluido(tema.id, checked as boolean);
-                    }}
-                    className="mt-1"
-                  />
+                  <div className="mt-1">
+                    <Checkbox 
+                      id={`tema-${tema.id}`}
+                      checked={tema.concluido}
+                      onCheckedChange={(checked) => {
+                        marcarConcluido(tema.id, checked as boolean);
+                      }}
+                      className={`${tema.concluido ? 'bg-[#34C759] border-[#34C759]' : 'border-gray-300'}`}
+                    />
+                  </div>
                   
                   <div className="flex-1">
                     <div className="flex justify-between items-start">
@@ -134,13 +141,13 @@ const ListaTemas = () => {
                         <label 
                           htmlFor={`tema-${tema.id}`}
                           className={`font-medium cursor-pointer ${
-                            tema.concluido ? 'line-through text-gray-500' : 'text-estudo-text'
+                            tema.concluido ? 'line-through text-estudo-gray' : 'text-estudo-text'
                           }`}
                         >
                           {tema.titulo}
                         </label>
                         
-                        <div className="text-sm text-gray-500 mt-1">
+                        <div className="text-sm text-estudo-gray mt-1">
                           {getNomeCategoria(tema.categoria)}
                         </div>
                       </div>
@@ -150,18 +157,18 @@ const ListaTemas = () => {
                         {getNivelAprendizadoBadge(tema.nivelAprendizado)}
                         
                         {isAtrasado(tema) && (
-                          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+                          <Badge variant="outline" className="bg-[#FFEFED] text-[#FF3B30] rounded-full">
                             <Clock size={12} className="mr-1" /> Atrasado
                           </Badge>
                         )}
                       </div>
                     </div>
                     
-                    <div className="mt-3 flex items-center text-sm text-gray-500">
+                    <div className="mt-3 flex items-center text-sm text-estudo-gray">
                       {tema.dataLimite && (
                         <div className="flex items-center">
                           <CalendarIcon size={14} className="mr-1" />
-                          <span className={`${isAtrasado(tema) ? 'text-red-500 font-medium' : ''}`}>
+                          <span className={`${isAtrasado(tema) ? 'text-[#FF3B30] font-medium' : ''}`}>
                             Data limite: {format(new Date(tema.dataLimite), "dd 'de' MMMM", { locale: ptBR })}
                           </span>
                         </div>
@@ -169,7 +176,7 @@ const ListaTemas = () => {
                       
                       {tema.concluido && tema.dataConclusao && (
                         <div className="flex items-center ml-4">
-                          <span className="text-green-600">
+                          <span className="text-[#34C759]">
                             ✓ Concluído em: {format(new Date(tema.dataConclusao), "dd/MM/yyyy", { locale: ptBR })}
                           </span>
                         </div>
@@ -183,19 +190,19 @@ const ListaTemas = () => {
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="text-xs"
+                              className="text-xs rounded-full border border-gray-200 mt-2"
                             >
                               Nível de aprendizado
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-56 p-3" align="start">
+                          <PopoverContent className="w-56 p-3 rounded-xl shadow-apple" align="start">
                             <div className="space-y-2">
                               <h4 className="font-medium text-sm">Definir nível</h4>
                               <div className="space-y-1">
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="w-full justify-start text-blue-600"
+                                  className="w-full justify-start text-[#007AFF] hover:bg-[#E5F2FF]"
                                   onClick={() => {
                                     atualizarNivelAprendizado(tema.id, 'iniciado');
                                   }}
@@ -206,7 +213,7 @@ const ListaTemas = () => {
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="w-full justify-start text-amber-600"
+                                  className="w-full justify-start text-[#FF9500] hover:bg-[#FFF5EB]"
                                   onClick={() => {
                                     atualizarNivelAprendizado(tema.id, 'reforcando');
                                   }}
@@ -217,7 +224,7 @@ const ListaTemas = () => {
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="w-full justify-start text-green-600"
+                                  className="w-full justify-start text-[#34C759] hover:bg-[#E3F8E9]"
                                   onClick={() => {
                                     atualizarNivelAprendizado(tema.id, 'dominado');
                                   }}

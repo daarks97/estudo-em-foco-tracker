@@ -13,10 +13,12 @@ const Index = () => {
       <div className="min-h-screen bg-estudo-background flex flex-col">
         <Header />
         
-        <main className="flex-1 container mx-auto px-4 py-6">
+        <main className="flex-1 container mx-auto px-4 py-6 animate-fade-in">
+          <h1 className="text-2xl font-medium text-estudo-text mb-6">Olá, Residente 👋</h1>
+          
           <Dashboard />
           
-          <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+          <div className="mt-8 bg-white rounded-2xl shadow-apple p-6">
             <CategoriasFiltro />
             <FiltrosAvancados />
             <ListaTemas />
