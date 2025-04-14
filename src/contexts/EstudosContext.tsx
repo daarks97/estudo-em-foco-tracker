@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { TemaEstudo, Categoria, Revisao } from '@/types/estudos';
 import { addDays, isSameDay, isAfter, isBefore } from 'date-fns';
@@ -24,7 +23,8 @@ const gerarRevisoes = (tema: Omit<TemaEstudo, 'id' | 'revisoes'>): Revisao[] => 
       tipo: 'D1',
       dataRevisao: addDays(dataEstudo, 1),
       concluida: false,
-      dataConclusao: null
+      dataConclusao: null,
+      statusRevisao: null
     },
     {
       id: `r7-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -32,7 +32,8 @@ const gerarRevisoes = (tema: Omit<TemaEstudo, 'id' | 'revisoes'>): Revisao[] => 
       tipo: 'D7',
       dataRevisao: addDays(dataEstudo, 7),
       concluida: false,
-      dataConclusao: null
+      dataConclusao: null,
+      statusRevisao: null
     },
     {
       id: `r30-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -40,7 +41,8 @@ const gerarRevisoes = (tema: Omit<TemaEstudo, 'id' | 'revisoes'>): Revisao[] => 
       tipo: 'D30',
       dataRevisao: addDays(dataEstudo, 30),
       concluida: false,
-      dataConclusao: null
+      dataConclusao: null,
+      statusRevisao: null
     }
   ];
 };
@@ -129,7 +131,7 @@ interface EstudosContextType {
   temas: TemaEstudo[];
   categorias: Categoria[];
   marcarConcluido: (id: string, concluido: boolean) => void;
-  marcarRevisaoConcluida: (temaId: string, revisaoId: string, concluida: boolean) => void;
+  marcarRevisaoConcluida: (temaId: string, revisaoId: string, concluida: boolean, status?: 'sucesso' | 'incompleta') => void;
   adicionarTema: (tema: Omit<TemaEstudo, 'id' | 'revisoes'>) => void;
   filtrarPorCategoria: (categoriaId: string | null) => void;
   categoriaAtual: string | null;
@@ -141,14 +143,17 @@ interface EstudosContextType {
     revisaoId: string; 
     tipo: 'D1' | 'D7' | 'D30';
     atrasada: boolean; 
+    statusRevisao?: 'sucesso' | 'incompleta' | null;
   }[];
   obterRevisoesAtrasadas: () => { 
     temaId: string; 
     titulo: string; 
     categoria: string; 
     revisaoId: string; 
-    tipo: 'D1' | 'D7' | 'D30'; 
+    tipo: 'D1' | 'D7' | 'D30';
+    statusRevisao?: 'sucesso' | 'incompleta' | null;
   }[];
+  atualizarNivelAprendizado: (temaId: string, nivel: 'iniciado' | 'reforcando' | 'dominado') => void;
 }
 
 const EstudosContext = createContext<EstudosContextType | undefined>(undefined);
@@ -186,7 +191,7 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success(concluido ? "Tema marcado como concluído!" : "Tema marcado como não concluído!");
   };
   
-  const marcarRevisaoConcluida = (temaId: string, revisaoId: string, concluida: boolean) => {
+  const marcarRevisaoConcluida = (temaId: string, revisaoId: string, concluida: boolean, status?: 'sucesso' | 'incompleta') => {
     setTemas(prevTemas => prevTemas.map(tema => {
       if (tema.id === temaId) {
         const novasRevisoes = tema.revisoes.map(revisao => {
@@ -194,7 +199,8 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
             return {
               ...revisao,
               concluida,
-              dataConclusao: concluida ? new Date() : null
+              dataConclusao: concluida ? new Date() : null,
+              statusRevisao: concluida ? status || 'sucesso' : null
             };
           }
           return revisao;
@@ -208,7 +214,29 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return tema;
     }));
     
-    toast.success(concluida ? "Revisão marcada como concluída!" : "Revisão marcada como não concluída!");
+    if (concluida) {
+      const mensagem = status === 'incompleta' 
+        ? "Revisão marcada como incompleta" 
+        : "Revisão concluída com sucesso!";
+      
+      toast.success(mensagem);
+    } else {
+      toast.success("Revisão marcada como não concluída");
+    }
+  };
+
+  const atualizarNivelAprendizado = (temaId: string, nivel: 'iniciado' | 'reforcando' | 'dominado') => {
+    setTemas(prevTemas => prevTemas.map(tema => {
+      if (tema.id === temaId) {
+        return {
+          ...tema,
+          nivelAprendizado: nivel
+        };
+      }
+      return tema;
+    }));
+    
+    toast.success(`Nível de aprendizado atualizado para: ${nivel}`);
   };
 
   const adicionarTema = (tema: Omit<TemaEstudo, 'id' | 'revisoes'>) => {
@@ -230,6 +258,41 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     toast.success("Novo tema adicionado com sucesso!");
   };
   
+  // Função para obter revisões atrasadas
+  const obterRevisoesAtrasadas = () => {
+    const hoje = new Date();
+    const resultados: { 
+      temaId: string; 
+      titulo: string; 
+      categoria: string; 
+      revisaoId: string; 
+      tipo: 'D1' | 'D7' | 'D30';
+      statusRevisao?: 'sucesso' | 'incompleta' | null;
+    }[] = [];
+    
+    temas.forEach(tema => {
+      tema.revisoes.forEach(revisao => {
+        if (!revisao.concluida) {
+          const dataRevisao = new Date(revisao.dataRevisao);
+          
+          // Verificar se a revisão está atrasada
+          if (isBefore(dataRevisao, hoje) && !isSameDay(dataRevisao, hoje)) {
+            resultados.push({
+              temaId: tema.id,
+              titulo: tema.titulo,
+              categoria: tema.categoria,
+              revisaoId: revisao.id,
+              tipo: revisao.tipo,
+              statusRevisao: revisao.statusRevisao
+            });
+          }
+        }
+      });
+    });
+    
+    return resultados;
+  };
+
   // Função para obter revisões para hoje
   const obterRevisoesHoje = () => {
     const hoje = new Date();
@@ -239,7 +302,8 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       categoria: string; 
       revisaoId: string; 
       tipo: 'D1' | 'D7' | 'D30';
-      atrasada: boolean; 
+      atrasada: boolean;
+      statusRevisao?: 'sucesso' | 'incompleta' | null;
     }[] = [];
     
     temas.forEach(tema => {
@@ -255,40 +319,8 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
               categoria: tema.categoria,
               revisaoId: revisao.id,
               tipo: revisao.tipo,
-              atrasada: isBefore(dataRevisao, hoje) && !isSameDay(dataRevisao, hoje)
-            });
-          }
-        }
-      });
-    });
-    
-    return resultados;
-  };
-  
-  // Função para obter revisões atrasadas
-  const obterRevisoesAtrasadas = () => {
-    const hoje = new Date();
-    const resultados: { 
-      temaId: string; 
-      titulo: string; 
-      categoria: string; 
-      revisaoId: string; 
-      tipo: 'D1' | 'D7' | 'D30'; 
-    }[] = [];
-    
-    temas.forEach(tema => {
-      tema.revisoes.forEach(revisao => {
-        if (!revisao.concluida) {
-          const dataRevisao = new Date(revisao.dataRevisao);
-          
-          // Verificar se a revisão está atrasada
-          if (isBefore(dataRevisao, hoje) && !isSameDay(dataRevisao, hoje)) {
-            resultados.push({
-              temaId: tema.id,
-              titulo: tema.titulo,
-              categoria: tema.categoria,
-              revisaoId: revisao.id,
-              tipo: revisao.tipo
+              atrasada: isBefore(dataRevisao, hoje) && !isSameDay(dataRevisao, hoje),
+              statusRevisao: revisao.statusRevisao
             });
           }
         }
@@ -309,7 +341,8 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       categoriaAtual,
       temasFiltrados,
       obterRevisoesHoje,
-      obterRevisoesAtrasadas
+      obterRevisoesAtrasadas,
+      atualizarNivelAprendizado
     }}>
       {children}
     </EstudosContext.Provider>

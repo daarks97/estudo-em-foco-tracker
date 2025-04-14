@@ -9,6 +9,7 @@ export interface TemaEstudo {
   dataConclusao: Date | null;
   prioridade: 'baixa' | 'media' | 'alta';
   revisoes: Revisao[];
+  nivelAprendizado?: 'iniciado' | 'reforcando' | 'dominado';
 }
 
 export interface Revisao {
@@ -18,6 +19,7 @@ export interface Revisao {
   dataRevisao: Date;
   concluida: boolean;
   dataConclusao: Date | null;
+  statusRevisao?: 'sucesso' | 'incompleta' | null;
 }
 
 export interface Categoria {

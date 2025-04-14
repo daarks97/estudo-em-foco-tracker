@@ -7,9 +7,22 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger 
+} from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarIcon, Clock, ArrowLeft, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { 
+  CalendarIcon, 
+  Clock, 
+  ArrowLeft, 
+  RotateCcw, 
+  CheckCircle2, 
+  CheckCheck, 
+  AlertCircle 
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Revisoes = () => {
@@ -50,6 +63,108 @@ const Revisoes = () => {
       default:
         return null;
     }
+  };
+
+  const getStatusRevisaoTexto = (status: 'sucesso' | 'incompleta' | null) => {
+    switch (status) {
+      case 'sucesso': return 'Revisado com sucesso';
+      case 'incompleta': return 'Revisão incompleta';
+      default: return 'Não revisado';
+    }
+  };
+  
+  const renderRevisaoCard = (revisao: any, prefix: string = '') => {
+    return (
+      <Card 
+        key={revisao.revisaoId} 
+        className={`hover:shadow-md transition-shadow ${revisao.atrasada ? 'bg-red-50 border-red-100' : 'bg-white'}`}
+      >
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="mt-1">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-5 w-5 rounded-full">
+                    <Checkbox className="opacity-0 absolute" />
+                    <span className="sr-only">Selecionar status</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-3" align="start">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Status da revisão</h4>
+                    <div className="space-y-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full justify-start text-green-600"
+                        onClick={() => {
+                          marcarRevisaoConcluida(revisao.temaId, revisao.revisaoId, true, 'sucesso');
+                        }}
+                      >
+                        <CheckCheck className="mr-2 h-4 w-4" />
+                        Revisado com sucesso
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full justify-start text-amber-600"
+                        onClick={() => {
+                          marcarRevisaoConcluida(revisao.temaId, revisao.revisaoId, true, 'incompleta');
+                        }}
+                      >
+                        <AlertCircle className="mr-2 h-4 w-4" />
+                        Revisão incompleta
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full justify-start text-red-600"
+                        onClick={() => {
+                          marcarRevisaoConcluida(revisao.temaId, revisao.revisaoId, false);
+                        }}
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Não revisado
+                      </Button>
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-medium text-estudo-text">
+                    {revisao.titulo}
+                  </h3>
+                  
+                  <div className="text-sm text-gray-500 mt-1">
+                    {getNomeCategoria(revisao.categoria)}
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  {getTipoRevisaoBadge(revisao.tipo)}
+                  {revisao.atrasada && (
+                    <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
+                      <Clock size={12} className="mr-1" /> Atrasada
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              
+              <div className="mt-3 text-sm text-gray-500">
+                <div className="flex items-center">
+                  <CalendarIcon size={14} className="mr-1" />
+                  <span>{getTipoRevisaoTexto(revisao.tipo)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
   
   return (
@@ -134,50 +249,7 @@ const Revisoes = () => {
                 <p className="text-gray-500">Todas as suas revisões de hoje foram concluídas ou não há revisões programadas.</p>
               </div>
             ) : (
-              apenasHoje.map((revisao) => (
-                <Card key={revisao.revisaoId} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Checkbox 
-                        id={`revisao-${revisao.revisaoId}`}
-                        checked={false}
-                        onCheckedChange={(checked) => {
-                          marcarRevisaoConcluida(revisao.temaId, revisao.revisaoId, checked as boolean);
-                        }}
-                        className="mt-1"
-                      />
-                      
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <label 
-                              htmlFor={`revisao-${revisao.revisaoId}`}
-                              className="font-medium cursor-pointer text-estudo-text"
-                            >
-                              {revisao.titulo}
-                            </label>
-                            
-                            <div className="text-sm text-gray-500 mt-1">
-                              {getNomeCategoria(revisao.categoria)}
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            {getTipoRevisaoBadge(revisao.tipo)}
-                          </div>
-                        </div>
-                        
-                        <div className="mt-3 text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <CalendarIcon size={14} className="mr-1" />
-                            <span>{getTipoRevisaoTexto(revisao.tipo)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+              apenasHoje.map(revisao => renderRevisaoCard(revisao, 'hoje'))
             )}
           </TabsContent>
           
@@ -189,53 +261,7 @@ const Revisoes = () => {
                 <p className="text-gray-500">Todas as suas revisões estão em dia. Continue assim!</p>
               </div>
             ) : (
-              apenasAtrasadas.map((revisao) => (
-                <Card key={revisao.revisaoId} className="hover:shadow-md transition-shadow bg-red-50 border-red-100">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Checkbox 
-                        id={`revisao-atrasada-${revisao.revisaoId}`}
-                        checked={false}
-                        onCheckedChange={(checked) => {
-                          marcarRevisaoConcluida(revisao.temaId, revisao.revisaoId, checked as boolean);
-                        }}
-                        className="mt-1"
-                      />
-                      
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <label 
-                              htmlFor={`revisao-atrasada-${revisao.revisaoId}`}
-                              className="font-medium cursor-pointer text-estudo-text"
-                            >
-                              {revisao.titulo}
-                            </label>
-                            
-                            <div className="text-sm text-gray-500 mt-1">
-                              {getNomeCategoria(revisao.categoria)}
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            {getTipoRevisaoBadge(revisao.tipo)}
-                            <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
-                              <Clock size={12} className="mr-1" /> Atrasada
-                            </Badge>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-3 text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <CalendarIcon size={14} className="mr-1" />
-                            <span>{getTipoRevisaoTexto(revisao.tipo)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+              apenasAtrasadas.map(revisao => renderRevisaoCard(revisao, 'atrasada'))
             )}
           </TabsContent>
           
@@ -247,58 +273,7 @@ const Revisoes = () => {
                 <p className="text-gray-500">Não há revisões pendentes para hoje ou atrasadas.</p>
               </div>
             ) : (
-              revisoesHoje.map((revisao) => (
-                <Card 
-                  key={revisao.revisaoId} 
-                  className={`hover:shadow-md transition-shadow ${revisao.atrasada ? 'bg-red-50 border-red-100' : 'bg-white'}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Checkbox 
-                        id={`revisao-todas-${revisao.revisaoId}`}
-                        checked={false}
-                        onCheckedChange={(checked) => {
-                          marcarRevisaoConcluida(revisao.temaId, revisao.revisaoId, checked as boolean);
-                        }}
-                        className="mt-1"
-                      />
-                      
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <label 
-                              htmlFor={`revisao-todas-${revisao.revisaoId}`}
-                              className="font-medium cursor-pointer text-estudo-text"
-                            >
-                              {revisao.titulo}
-                            </label>
-                            
-                            <div className="text-sm text-gray-500 mt-1">
-                              {getNomeCategoria(revisao.categoria)}
-                            </div>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            {getTipoRevisaoBadge(revisao.tipo)}
-                            {revisao.atrasada && (
-                              <Badge variant="outline" className="bg-red-100 text-red-800 border-red-200">
-                                <Clock size={12} className="mr-1" /> Atrasada
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="mt-3 text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <CalendarIcon size={14} className="mr-1" />
-                            <span>{getTipoRevisaoTexto(revisao.tipo)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+              revisoesHoje.map(revisao => renderRevisaoCard(revisao, 'todas'))
             )}
           </TabsContent>
         </Tabs>
