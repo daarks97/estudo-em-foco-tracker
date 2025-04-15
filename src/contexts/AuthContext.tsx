@@ -1,107 +1,203 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase';
+import { Session, User, UserAttributes } from '@supabase/supabase-js';
 
-interface User {
+interface AuthUser {
   id: string;
   email: string;
   nome: string;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   login: (email: string, senha: string) => Promise<boolean>;
   registrar: (nome: string, email: string, senha: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
-// Criando o contexto com um valor padrão
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Usuário mockado para simulação
-const usuarioMock: User = {
-  id: '1',
-  email: 'usuario@example.com',
-  nome: 'Usuário Teste'
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Simulando verificação de autenticação no início
+  // Verificar sessão atual quando o componente é montado
   useEffect(() => {
-    const storedUser = localStorage.getItem('authUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    const getSession = async () => {
+      setLoading(true);
+      
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Erro ao verificar sessão:', error);
+          return;
+        }
+        
+        if (data?.session) {
+          await handleUserSession(data.session);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar autenticação:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getSession();
+
+    // Configurar listener para mudanças de autenticação
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session) {
+        await handleUserSession(session);
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  // Simulação de login
+  // Função para processar os dados do usuário a partir da sessão
+  const handleUserSession = async (session: Session) => {
+    const supabaseUser = session.user;
+    
+    if (!supabaseUser) return;
+    
+    try {
+      // Buscar perfil do usuário no perfis
+      const { data, error } = await supabase
+        .from('perfis')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Erro ao buscar perfil:', error);
+        return;
+      }
+      
+      // Se o perfil existe, usamos o nome dele, senão tentamos extrair do email
+      const nome = data?.nome || supabaseUser.email?.split('@')[0] || 'Usuário';
+      
+      setUser({
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        nome: nome
+      });
+    } catch (error) {
+      console.error('Erro ao processar usuário:', error);
+    }
+  };
+
+  // Login com Supabase
   const login = async (email: string, senha: string): Promise<boolean> => {
     try {
-      // Simulando um atraso de rede
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(true);
       
-      // Validação básica
       if (!email || !senha) {
         toast.error('Por favor, preencha todos os campos');
         return false;
       }
       
-      // Em produção, isso seria uma chamada para um serviço de autenticação
-      if (email === 'usuario@example.com' && senha === '123456') {
-        setUser(usuarioMock);
-        localStorage.setItem('authUser', JSON.stringify(usuarioMock));
-        toast.success('Login realizado com sucesso!');
-        return true;
-      } else {
-        toast.error('Credenciais inválidas');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: senha
+      });
+      
+      if (error) {
+        toast.error(error.message || 'Erro ao fazer login');
         return false;
       }
+      
+      toast.success('Login realizado com sucesso!');
+      return true;
     } catch (error) {
+      console.error('Erro ao fazer login:', error);
       toast.error('Erro ao fazer login');
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Simulação de registro
+  // Registro com Supabase
   const registrar = async (nome: string, email: string, senha: string): Promise<boolean> => {
     try {
-      // Simulando um atraso de rede
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLoading(true);
       
-      // Validação básica
       if (!nome || !email || !senha) {
         toast.error('Por favor, preencha todos os campos');
         return false;
       }
       
-      // Em produção, isso seria uma chamada para um serviço de autenticação
-      const novoUsuario = {
-        id: Date.now().toString(),
+      // Registrar usuário
+      const { data, error } = await supabase.auth.signUp({
         email,
-        nome
-      };
+        password: senha,
+        options: {
+          data: {
+            nome
+          }
+        }
+      });
       
-      setUser(novoUsuario);
-      localStorage.setItem('authUser', JSON.stringify(novoUsuario));
+      if (error) {
+        toast.error(error.message || 'Erro ao criar conta');
+        return false;
+      }
+      
+      // Criar perfil do usuário
+      if (data.user) {
+        const { error: perfilError } = await supabase
+          .from('perfis')
+          .insert([{ id: data.user.id, nome, email }]);
+        
+        if (perfilError) {
+          console.error('Erro ao criar perfil:', perfilError);
+          // Não vamos falhar o registro apenas porque o perfil não foi criado
+          // O perfil pode ser criado mais tarde
+        }
+      }
+      
       toast.success('Conta criada com sucesso!');
       return true;
     } catch (error) {
+      console.error('Erro ao criar conta:', error);
       toast.error('Erro ao criar conta');
       return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Logout
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('authUser');
-    toast.success('Logout realizado com sucesso');
+  // Logout com Supabase
+  const logout = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('Erro ao fazer logout:', error);
+        toast.error('Erro ao fazer logout');
+        return;
+      }
+      
+      setUser(null);
+      toast.success('Logout realizado com sucesso');
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      toast.error('Erro ao fazer logout');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isAuthenticated = !!user;
