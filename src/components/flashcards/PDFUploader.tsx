@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,8 +10,6 @@ import { toast } from 'sonner';
 import * as pdfjs from 'pdfjs-dist';
 
 // Inicializando PDF.js worker
-// Este import é apenas um placeholder para uma futura implementação com webpack
-// No ambiente Vite, usamos um CDN para o worker do PDF.js
 const pdfjsWorker = '//cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
@@ -56,7 +53,8 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
       return new Promise((resolve, reject) => {
         fileReader.onload = async (event) => {
           try {
-            const typedArray = new Uint8Array(event.target.result);
+            // Ensure we're handling the result as an ArrayBuffer
+            const typedArray = new Uint8Array(event.target.result as ArrayBuffer);
             const pdf = await pdfjs.getDocument(typedArray).promise;
             
             let fullText = '';
@@ -65,7 +63,9 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
             for (let i = 1; i <= pdf.numPages; i++) {
               const page = await pdf.getPage(i);
               const textContent = await page.getTextContent();
-              const textItems = textContent.items.map(item => item.str);
+              const textItems = textContent.items
+                .filter(item => 'str' in item) // Filter only TextItems that have the 'str' property
+                .map(item => (item as pdfjs.TextItem).str); // Explicitly cast to TextItem
               fullText += textItems.join(' ') + '\n';
             }
             
@@ -95,9 +95,9 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
       
       // Extrair texto do PDF
       const textoExtraido = await extrairTextoDoPDF(arquivo);
-      setTextoExtraido(textoExtraido);
+      setTextoExtraido(textoExtraido as string);
       
-      if (!textoExtraido || textoExtraido.trim().length < 50) {
+      if (!textoExtraido || (typeof textoExtraido === 'string' && textoExtraido.trim().length < 50)) {
         toast.error('Não foi possível extrair texto suficiente do PDF.');
         return;
       }

@@ -14,10 +14,10 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import HeaderUser from '@/components/HeaderUser';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Header = () => {
-  const { isMobile } = useMobile();
+  const isMobile = useIsMobile();
   const location = useLocation();
   
   const isActive = (path) => {

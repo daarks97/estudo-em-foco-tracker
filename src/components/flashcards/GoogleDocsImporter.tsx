@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,8 +8,17 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+// Define Google API types
+declare global {
+  interface Window {
+    gapi: any;
+    google: any;
+    onApiLoad: () => void;
+  }
+}
+
 // Configuração do Google API
-const API_KEY = 'AIzaSyCZTmIGT4Z5qnvrHkYjI6IgK1V-KCFzDok'; // Esta chave deve ser movida para um .env ou Edge Function
+const API_KEY = 'AIzaSyCZTmIGT4Z5qnvrHkYjI6IgK1V-KCFzDok'; 
 const CLIENT_ID = '380175101248-9t5i83lhijj3icns8c19oqvjrp83qlvg.apps.googleusercontent.com';
 const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly';
@@ -119,7 +127,7 @@ const GoogleDocsImporter = ({ onSalvarFlashcards }) => {
       setProcessando(true);
 
       // Obter o conteúdo do documento
-      const response = await gapi.client.drive.files.export({
+      const response = await window.gapi.client.drive.files.export({
         fileId: documentoSelecionado.id,
         mimeType: 'text/plain'
       });
