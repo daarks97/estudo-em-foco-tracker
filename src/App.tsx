@@ -12,6 +12,7 @@ import NotFound from "./pages/NotFound";
 import NovoTema from "./pages/NovoTema";
 import Revisoes from "./pages/Revisoes";
 import Auth from "./pages/Auth";
+import Flashcards from "./pages/Flashcards";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Revisoes />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/flashcards" 
+                element={
+                  <ProtectedRoute>
+                    <Flashcards />
                   </ProtectedRoute>
                 } 
               />

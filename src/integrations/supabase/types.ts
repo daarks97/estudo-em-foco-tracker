@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      flashcards: {
+        Row: {
+          data_criacao: string
+          data_revisao: string | null
+          id: string
+          nome_arquivo: string | null
+          origem: string
+          pergunta: string
+          resposta: string
+          revisado: boolean
+          user_id: string
+        }
+        Insert: {
+          data_criacao?: string
+          data_revisao?: string | null
+          id?: string
+          nome_arquivo?: string | null
+          origem: string
+          pergunta: string
+          resposta: string
+          revisado?: boolean
+          user_id: string
+        }
+        Update: {
+          data_criacao?: string
+          data_revisao?: string | null
+          id?: string
+          nome_arquivo?: string | null
+          origem?: string
+          pergunta?: string
+          resposta?: string
+          revisado?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       perfis: {
         Row: {
           criado_em: string | null
