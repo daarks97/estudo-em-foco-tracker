@@ -1,7 +1,8 @@
+
 import React, { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, FileText, X, ArrowRight, Loader2 } from 'lucide-react';
+import { Upload, FileText, Loader2, ArrowRight } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -15,40 +16,39 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 const PDFUploader = ({ onSalvarFlashcards }) => {
   const { user } = useAuth();
-  const [arquivo, setArquivo] = useState(null);
-  const [nomeArquivo, setNomeArquivo] = useState('');
+  const fileInputRef = useRef(null);
+  const [arquivoSelecionado, setArquivoSelecionado] = useState(null);
+  const [textoExtraido, setTextoExtraido] = useState('');
   const [processando, setProcessando] = useState(false);
   const [flashcardsGerados, setFlashcardsGerados] = useState([]);
-  const [textoExtraido, setTextoExtraido] = useState('');
-  const fileInputRef = useRef(null);
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      toast.error('Apenas arquivos PDF são aceitos.');
-      return;
-    }
-
-    setArquivo(file);
-    setNomeArquivo(file.name);
-    setFlashcardsGerados([]);
+  const selecionarArquivo = () => {
+    fileInputRef.current.click();
   };
 
-  const limparArquivo = () => {
-    setArquivo(null);
-    setNomeArquivo('');
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        toast.error('Por favor selecione um arquivo PDF.');
+        return;
+      }
+      setArquivoSelecionado(file);
+      setFlashcardsGerados([]);
+    }
+  };
+
+  const handleCancelar = () => {
+    setArquivoSelecionado(null);
     setTextoExtraido('');
     setFlashcardsGerados([]);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    fileInputRef.current.value = '';
   };
 
-  const extrairTextoDoPDF = async (file) => {
-    try {
+  const extrairTextoDoPDF = async (arquivo) => {
+    if (arquivo) {
       const fileReader = new FileReader();
+      fileReader.readAsArrayBuffer(arquivo);
       
       return new Promise((resolve, reject) => {
         fileReader.onload = async (event) => {
@@ -59,33 +59,32 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
             
             let fullText = '';
             
-            // Extrair texto de cada página
+            // Extrair texto de todas as páginas
             for (let i = 1; i <= pdf.numPages; i++) {
               const page = await pdf.getPage(i);
               const textContent = await page.getTextContent();
               const textItems = textContent.items
-                .filter(item => 'str' in item) // Filter only TextItems that have the 'str' property
-                .map(item => (item as pdfjs.TextItem).str); // Explicitly cast to TextItem
+                .filter(item => 'str' in item) // Filter only items that have the 'str' property
+                .map(item => item.str); // Access str property directly
               fullText += textItems.join(' ') + '\n';
             }
             
             resolve(fullText);
           } catch (error) {
+            console.error('Erro ao extrair texto do PDF:', error);
             reject(error);
           }
         };
         
-        fileReader.onerror = reject;
-        fileReader.readAsArrayBuffer(file);
+        fileReader.onerror = (error) => {
+          reject(error);
+        };
       });
-    } catch (error) {
-      console.error('Erro ao extrair texto do PDF:', error);
-      throw new Error('Não foi possível extrair o texto do PDF.');
     }
   };
 
   const processarPDF = async () => {
-    if (!arquivo) {
+    if (!arquivoSelecionado) {
       toast.error('Selecione um arquivo PDF primeiro.');
       return;
     }
@@ -94,7 +93,7 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
       setProcessando(true);
       
       // Extrair texto do PDF
-      const textoExtraido = await extrairTextoDoPDF(arquivo);
+      const textoExtraido = await extrairTextoDoPDF(arquivoSelecionado);
       setTextoExtraido(textoExtraido as string);
       
       if (!textoExtraido || (typeof textoExtraido === 'string' && textoExtraido.trim().length < 50)) {
@@ -107,7 +106,7 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
         body: {
           texto: textoExtraido,
           origem: 'pdf',
-          nomeArquivo: nomeArquivo
+          nomeArquivo: arquivoSelecionado.name
         }
       });
 
@@ -135,9 +134,14 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
       return;
     }
 
-    const salvo = await onSalvarFlashcards(flashcardsGerados, 'pdf', nomeArquivo);
+    const salvo = await onSalvarFlashcards(
+      flashcardsGerados, 
+      'pdf', 
+      arquivoSelecionado?.name || 'Documento PDF'
+    );
+    
     if (salvo) {
-      limparArquivo();
+      handleCancelar();
     }
   };
 
@@ -147,29 +151,33 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
         <InfoIcon className="h-4 w-4" />
         <AlertTitle>Como funciona</AlertTitle>
         <AlertDescription>
-          Faça o upload de um arquivo PDF com seu resumo de estudos. 
+          Faça upload de um arquivo PDF com seu resumo de estudos.
           Nossa IA irá extrair o texto e gerar automaticamente flashcards para você revisar.
         </AlertDescription>
       </Alert>
 
+      <input 
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="application/pdf"
+        style={{ display: 'none' }}
+      />
+
       <Card className="mb-6">
         <CardContent className="p-6">
-          {!arquivo ? (
-            <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-lg font-medium mb-2">Clique para selecionar um PDF</p>
-              <p className="text-sm text-gray-500 text-center">
-                Ou arraste e solte seu arquivo aqui
+          {!arquivoSelecionado ? (
+            <div className="flex flex-col items-center justify-center p-8">
+              <Button 
+                onClick={selecionarArquivo}
+                className="bg-estudo-primary hover:bg-estudo-primary/90"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Selecionar arquivo PDF
+              </Button>
+              <p className="text-sm text-gray-500 mt-4 text-center">
+                Selecione um arquivo PDF com seu material de estudo.
               </p>
-              <input 
-                type="file" 
-                accept=".pdf" 
-                className="hidden" 
-                onChange={handleFileChange}
-                ref={fileInputRef}
-              />
             </div>
           ) : (
             <div>
@@ -177,19 +185,25 @@ const PDFUploader = ({ onSalvarFlashcards }) => {
                 <div className="flex items-center">
                   <FileText className="h-8 w-8 text-red-500 mr-3" />
                   <div>
-                    <p className="font-medium">{nomeArquivo}</p>
+                    <p className="font-medium">{arquivoSelecionado.name}</p>
                     <p className="text-sm text-gray-500">
-                      {arquivo.size ? `${(arquivo.size / 1024 / 1024).toFixed(2)} MB` : ''}
+                      {(arquivoSelecionado.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
                 </div>
-                <Button variant="ghost" size="icon" onClick={limparArquivo}>
-                  <X className="h-5 w-5" />
+                <Button 
+                  variant="ghost" 
+                  onClick={selecionarArquivo}
+                >
+                  Mudar
                 </Button>
               </div>
               
               <div className="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
-                <Button variant="outline" onClick={limparArquivo}>
+                <Button 
+                  variant="outline" 
+                  onClick={handleCancelar}
+                >
                   Cancelar
                 </Button>
                 <Button 
