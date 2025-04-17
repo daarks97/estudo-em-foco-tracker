@@ -2,9 +2,10 @@
 import React from 'react';
 import { useEstudos } from '@/contexts/EstudosContext';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { AlertCircle } from 'lucide-react';
 
 const Dashboard = () => {
-  const { temas } = useEstudos();
+  const { temas, contarRevisoesPendentes } = useEstudos();
   
   // Cálculos para métricas
   const totalTemas = temas.length;
@@ -28,6 +29,9 @@ const Dashboard = () => {
   const temasPrioridadeAlta = temas.filter(tema => tema.prioridade === 'alta' && !tema.concluido).length;
   const temasPrioridadeMedia = temas.filter(tema => tema.prioridade === 'media' && !tema.concluido).length;
   const temasPrioridadeBaixa = temas.filter(tema => tema.prioridade === 'baixa' && !tema.concluido).length;
+  
+  // Obter contagem de revisões pendentes
+  const revisoesPendentes = contarRevisoesPendentes();
 
   return (
     <div className="bg-white rounded-2xl shadow-apple p-6 animate-scale-in">
@@ -52,7 +56,7 @@ const Dashboard = () => {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         <div>
           <h3 className="text-md font-medium mb-4 text-estudo-text">Temas por Prioridade</h3>
           <div className="space-y-5">
@@ -112,6 +116,36 @@ const Dashboard = () => {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+      
+      <div className="bg-blue-50 p-5 rounded-xl border border-blue-100">
+        <div className="flex items-start">
+          <AlertCircle className="text-blue-500 mt-0.5 mr-3 h-5 w-5 flex-shrink-0" />
+          <div>
+            <h4 className="font-medium text-blue-800 mb-1">Sistema de Revisão Espaçada</h4>
+            <p className="text-sm text-gray-700">
+              Quando você marca um tema como <strong>concluído</strong>, ele é automaticamente enviado para a página de Revisões.
+              O sistema seguirá a sequência de revisões: D+1 (1 dia), D+7 (7 dias) e D+30 (30 dias) para reforçar o aprendizado.
+            </p>
+            <div className="grid grid-cols-3 gap-3 mt-4">
+              <div className="bg-white p-3 rounded-lg border border-green-100 text-center">
+                <h5 className="text-sm font-medium text-green-800 mb-1">D+1</h5>
+                <div className="text-xl font-semibold text-green-600">{revisoesPendentes.D1}</div>
+                <div className="text-xs text-gray-500">pendentes</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-blue-100 text-center">
+                <h5 className="text-sm font-medium text-blue-800 mb-1">D+7</h5>
+                <div className="text-xl font-semibold text-blue-600">{revisoesPendentes.D7}</div>
+                <div className="text-xs text-gray-500">pendentes</div>
+              </div>
+              <div className="bg-white p-3 rounded-lg border border-purple-100 text-center">
+                <h5 className="text-sm font-medium text-purple-800 mb-1">D+30</h5>
+                <div className="text-xl font-semibold text-purple-600">{revisoesPendentes.D30}</div>
+                <div className="text-xs text-gray-500">pendentes</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
