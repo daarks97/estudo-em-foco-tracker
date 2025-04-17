@@ -50,6 +50,7 @@ export const useRevisoes = (temas: TemaEstudo[]) => {
       tipo: 'D1' | 'D7' | 'D30';
       atrasada: boolean;
       statusRevisao?: 'sucesso' | 'incompleta' | null;
+      dataRevisao: Date; // Adicionando a data da revisão para ordenação
     }[] = [];
     
     temas.forEach(tema => {
@@ -66,18 +67,45 @@ export const useRevisoes = (temas: TemaEstudo[]) => {
               revisaoId: revisao.id,
               tipo: revisao.tipo,
               atrasada: isBefore(dataRevisao, hoje) && !isSameDay(dataRevisao, hoje),
-              statusRevisao: revisao.statusRevisao
+              statusRevisao: revisao.statusRevisao,
+              dataRevisao: dataRevisao
             });
           }
         }
       });
     });
     
+    // Ordenar por data de revisão (mais antigas primeiro)
+    resultados.sort((a, b) => a.dataRevisao.getTime() - b.dataRevisao.getTime());
+    
     return resultados;
+  };
+
+  // Função para contar revisões pendentes por tipo
+  const contarRevisoesPendentes = () => {
+    const hoje = new Date();
+    const contagem = {
+      D1: 0,
+      D7: 0,
+      D30: 0,
+      total: 0
+    };
+    
+    temas.forEach(tema => {
+      tema.revisoes.forEach(revisao => {
+        if (!revisao.concluida) {
+          contagem[revisao.tipo]++;
+          contagem.total++;
+        }
+      });
+    });
+    
+    return contagem;
   };
 
   return {
     obterRevisoesAtrasadas,
-    obterRevisoesHoje
+    obterRevisoesHoje,
+    contarRevisoesPendentes
   };
 };

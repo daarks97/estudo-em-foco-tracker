@@ -21,16 +21,25 @@ import {
   RotateCcw, 
   CheckCircle2, 
   CheckCheck, 
-  AlertCircle 
+  AlertCircle,
+  Info
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Revisoes = () => {
-  const { obterRevisoesHoje, obterRevisoesAtrasadas, marcarRevisaoConcluida, categorias } = useEstudos();
+  const { 
+    obterRevisoesHoje, 
+    obterRevisoesAtrasadas, 
+    marcarRevisaoConcluida, 
+    categorias, 
+    contarRevisoesPendentes 
+  } = useEstudos();
+  
   const [activeTab, setActiveTab] = useState('hoje');
   
   const revisoesHoje = obterRevisoesHoje();
   const revisoesAtrasadas = obterRevisoesAtrasadas();
+  const contagemRevisoes = contarRevisoesPendentes();
   
   // Filtrar apenas as atrasadas para a aba "atrasadas"
   const apenasAtrasadas = revisoesHoje.filter(rev => rev.atrasada);
@@ -157,8 +166,18 @@ const Revisoes = () => {
               <div className="mt-3 text-sm text-gray-500">
                 <div className="flex items-center">
                   <CalendarIcon size={14} className="mr-1" />
-                  <span>{getTipoRevisaoTexto(revisao.tipo)}</span>
+                  <span>
+                    {getTipoRevisaoTexto(revisao.tipo)} - 
+                    {revisao.atrasada 
+                      ? ` Programada para ${format(revisao.dataRevisao, "dd/MM/yyyy", { locale: ptBR })}`
+                      : ` Realizar hoje (${format(new Date(), "dd/MM/yyyy", { locale: ptBR })})`
+                    }
+                  </span>
                 </div>
+              </div>
+              
+              <div className="mt-1 text-xs text-gray-400 italic">
+                <span>Para continuar o ciclo de revisões, marque como "Revisado com sucesso"</span>
               </div>
             </div>
           </div>
@@ -188,7 +207,21 @@ const Revisoes = () => {
             </div>
             <div>
               <h2 className="text-lg font-semibold">Sistema de Revisão Espaçada</h2>
-              <p className="text-sm text-gray-600">Revise os temas em intervalos específicos para melhor retenção</p>
+              <p className="text-sm text-gray-600">Revise os temas seguindo a sequência para melhor retenção</p>
+            </div>
+          </div>
+          
+          <div className="bg-blue-50 p-3 rounded-lg border border-blue-100 mb-4">
+            <div className="flex items-start">
+              <Info className="text-blue-500 mt-0.5 mr-2 h-5 w-5" />
+              <div>
+                <h3 className="text-sm font-medium text-blue-800">Como funciona a revisão sequencial</h3>
+                <p className="text-xs text-gray-700 mt-1">
+                  Ao marcar um tema como concluído, ele entrará primeiro na revisão de 1 dia.
+                  Quando completar esta revisão, o tema passará para a revisão de 7 dias,
+                  e depois para a de 30 dias. Para avançar no ciclo, marque cada revisão como "Revisado com sucesso".
+                </p>
+              </div>
             </div>
           </div>
           
@@ -197,6 +230,7 @@ const Revisoes = () => {
               <div className="flex items-center text-green-800 mb-1">
                 <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200 mr-2">D+1</Badge>
                 <span className="font-medium">Revisão de 1 dia</span>
+                <Badge className="ml-auto bg-green-500">{contagemRevisoes.D1}</Badge>
               </div>
               <p className="text-xs text-gray-600">Revisão realizada 1 dia após o estudo inicial</p>
             </div>
@@ -205,16 +239,18 @@ const Revisoes = () => {
               <div className="flex items-center text-blue-800 mb-1">
                 <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 mr-2">D+7</Badge>
                 <span className="font-medium">Revisão de 7 dias</span>
+                <Badge className="ml-auto bg-blue-500">{contagemRevisoes.D7}</Badge>
               </div>
-              <p className="text-xs text-gray-600">Revisão realizada 7 dias após o estudo inicial</p>
+              <p className="text-xs text-gray-600">Revisão realizada 7 dias após concluir a revisão D+1</p>
             </div>
             
             <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
               <div className="flex items-center text-purple-800 mb-1">
                 <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-200 mr-2">D+30</Badge>
                 <span className="font-medium">Revisão de 30 dias</span>
+                <Badge className="ml-auto bg-purple-500">{contagemRevisoes.D30}</Badge>
               </div>
-              <p className="text-xs text-gray-600">Revisão realizada 30 dias após o estudo inicial</p>
+              <p className="text-xs text-gray-600">Revisão realizada 30 dias após concluir a revisão D+7</p>
             </div>
           </div>
         </div>

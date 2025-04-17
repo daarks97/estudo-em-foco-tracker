@@ -1,9 +1,9 @@
 
 import { useState } from 'react';
-import { TemaEstudo } from '@/types/estudos';
+import { TemaEstudo, Revisao } from '@/types/estudos';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { gerarRevisoes } from '@/utils/revisaoUtils';
+import { gerarRevisoes, gerarProximaRevisao } from '@/utils/revisaoUtils';
 
 export const useTemaOperations = (
   temas: TemaEstudo[], 
@@ -37,10 +37,32 @@ export const useTemaOperations = (
       // Atualizar estado local
       setTemas(prevTemas => prevTemas.map(tema => {
         if (tema.id === id) {
+          // Se estiver sendo marcado como concluído, gerar revisão inicial
+          let novasRevisoes = [...tema.revisoes];
+          
+          if (concluido && novasRevisoes.length === 0) {
+            // Só gera revisão se não tiver nenhuma ainda
+            const revisaoInicial = gerarRevisoes({
+              titulo: tema.titulo,
+              categoria: tema.categoria,
+              dataEstudo: tema.dataEstudo,
+              dataLimite: tema.dataLimite,
+              concluido: true,
+              dataConclusao: dataConclusao ? new Date(dataConclusao) : new Date(),
+              prioridade: tema.prioridade
+            })[0];
+            
+            if (revisaoInicial) {
+              revisaoInicial.temaId = id;
+              novasRevisoes.push(revisaoInicial);
+            }
+          }
+          
           return {
             ...tema,
             concluido,
-            dataConclusao: dataConclusao ? new Date(dataConclusao) : null
+            dataConclusao: dataConclusao ? new Date(dataConclusao) : null,
+            revisoes: novasRevisoes
           };
         }
         return tema;
@@ -56,7 +78,13 @@ export const useTemaOperations = (
   const marcarRevisaoConcluida = (temaId: string, revisaoId: string, concluida: boolean, status?: 'sucesso' | 'incompleta') => {
     setTemas(prevTemas => prevTemas.map(tema => {
       if (tema.id === temaId) {
-        const novasRevisoes = tema.revisoes.map(revisao => {
+        // Encontrar a revisão atual
+        const revisaoAtual = tema.revisoes.find(rev => rev.id === revisaoId);
+        
+        if (!revisaoAtual) return tema;
+        
+        // Atualizar as revisões existentes
+        let novasRevisoes = tema.revisoes.map(revisao => {
           if (revisao.id === revisaoId) {
             return {
               ...revisao,
@@ -67,6 +95,23 @@ export const useTemaOperations = (
           }
           return revisao;
         });
+        
+        // Se a revisão foi marcada como concluída, gerar a próxima revisão
+        if (concluida && revisaoAtual && (status === 'sucesso' || !status)) {
+          const revisaoAtualAtualizada = {
+            ...revisaoAtual,
+            concluida: true,
+            dataConclusao: new Date(),
+            statusRevisao: status || 'sucesso'
+          };
+          
+          const proximaRevisao = gerarProximaRevisao(revisaoAtualAtualizada);
+          
+          if (proximaRevisao) {
+            proximaRevisao.temaId = temaId;
+            novasRevisoes.push(proximaRevisao);
+          }
+        }
         
         return {
           ...tema,
@@ -141,21 +186,26 @@ export const useTemaOperations = (
       if (data) {
         // Transformar os dados do formato do Supabase para o formato usado pelo app
         const temasCarregados: TemaEstudo[] = data.map(tema => {
-          // Gerar revisões para o tema
-          const novasRevisoes = gerarRevisoes({
-            titulo: tema.titulo,
-            categoria: tema.categoria,
-            dataEstudo: new Date(tema.data_estudo),
-            dataLimite: tema.data_limite ? new Date(tema.data_limite) : null,
-            concluido: tema.concluido,
-            dataConclusao: tema.data_conclusao ? new Date(tema.data_conclusao) : null,
-            prioridade: tema.prioridade as 'baixa' | 'media' | 'alta',
-          });
+          // Verificar se o tema está concluído para gerar revisões
+          const novasRevisoes: Revisao[] = [];
           
-          // Atualizar o temaId para as revisões
-          novasRevisoes.forEach(revisao => {
-            revisao.temaId = tema.id;
-          });
+          if (tema.concluido) {
+            // Gerar apenas a primeira revisão para temas concluídos que ainda não têm revisão
+            const revisaoInicial = gerarRevisoes({
+              titulo: tema.titulo,
+              categoria: tema.categoria,
+              dataEstudo: new Date(tema.data_estudo),
+              dataLimite: tema.data_limite ? new Date(tema.data_limite) : null,
+              concluido: tema.concluido,
+              dataConclusao: tema.data_conclusao ? new Date(tema.data_conclusao) : null,
+              prioridade: tema.prioridade as 'baixa' | 'media' | 'alta',
+            })[0];
+            
+            if (revisaoInicial) {
+              revisaoInicial.temaId = tema.id;
+              novasRevisoes.push(revisaoInicial);
+            }
+          }
           
           return {
             id: tema.id,
@@ -216,13 +266,18 @@ export const useTemaOperations = (
         const temaInserido = data[0];
         const id = temaInserido.id;
         
-        // Gerar revisões para o tema
-        const novasRevisoes = gerarRevisoes(tema);
+        // Verificar se o tema já está concluído para gerar revisões
+        let novasRevisoes: Revisao[] = [];
         
-        // Atualizar o temaId para as revisões
-        novasRevisoes.forEach(revisao => {
-          revisao.temaId = id;
-        });
+        if (tema.concluido) {
+          // Gerar apenas a primeira revisão para temas que já estão concluídos
+          const revisaoInicial = gerarRevisoes(tema)[0];
+          
+          if (revisaoInicial) {
+            revisaoInicial.temaId = id;
+            novasRevisoes.push(revisaoInicial);
+          }
+        }
         
         const novoTema: TemaEstudo = {
           ...tema,

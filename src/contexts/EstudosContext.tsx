@@ -38,7 +38,8 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   const {
     obterRevisoesAtrasadas,
-    obterRevisoesHoje
+    obterRevisoesHoje,
+    contarRevisoesPendentes
   } = useRevisoes(temas);
 
   // Carregar temas quando o componente montar ou o usuário mudar
@@ -66,7 +67,8 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       obterRevisoesHoje,
       obterRevisoesAtrasadas,
       atualizarNivelAprendizado,
-      carregarTemas
+      carregarTemas,
+      contarRevisoesPendentes
     }}>
       {children}
     </EstudosContext.Provider>

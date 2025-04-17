@@ -23,6 +23,7 @@ export interface EstudosContextType {
     tipo: 'D1' | 'D7' | 'D30';
     atrasada: boolean; 
     statusRevisao?: 'sucesso' | 'incompleta' | null;
+    dataRevisao: Date;
   }[];
   obterRevisoesAtrasadas: () => { 
     temaId: string; 
@@ -34,4 +35,10 @@ export interface EstudosContextType {
   }[];
   atualizarNivelAprendizado: (temaId: string, nivel: 'iniciado' | 'reforcando' | 'dominado') => void;
   carregarTemas: () => Promise<void>;
+  contarRevisoesPendentes: () => {
+    D1: number;
+    D7: number;
+    D30: number;
+    total: number;
+  };
 }
