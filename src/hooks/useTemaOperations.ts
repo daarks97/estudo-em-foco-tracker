@@ -15,7 +15,7 @@ export const useTemaOperations = (
   const marcarConcluido = async (id: string, concluido: boolean) => {
     if (!user) return;
     
-    const dataConclusao = concluido ? new Date() : null;
+    const dataConclusao = concluido ? new Date().toISOString() : null;
     
     try {
       // Atualizar no Supabase
@@ -40,7 +40,7 @@ export const useTemaOperations = (
           return {
             ...tema,
             concluido,
-            dataConclusao
+            dataConclusao: dataConclusao ? new Date(dataConclusao) : null
           };
         }
         return tema;
