@@ -63,6 +63,48 @@ export type Database = {
         }
         Relationships: []
       }
+      temas: {
+        Row: {
+          categoria: string
+          concluido: boolean
+          created_at: string
+          data_conclusao: string | null
+          data_estudo: string
+          data_limite: string | null
+          id: string
+          nivel_aprendizado: string | null
+          prioridade: string
+          titulo: string
+          user_id: string
+        }
+        Insert: {
+          categoria: string
+          concluido?: boolean
+          created_at?: string
+          data_conclusao?: string | null
+          data_estudo?: string
+          data_limite?: string | null
+          id?: string
+          nivel_aprendizado?: string | null
+          prioridade: string
+          titulo: string
+          user_id: string
+        }
+        Update: {
+          categoria?: string
+          concluido?: boolean
+          created_at?: string
+          data_conclusao?: string | null
+          data_estudo?: string
+          data_limite?: string | null
+          id?: string
+          nivel_aprendizado?: string | null
+          prioridade?: string
+          titulo?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

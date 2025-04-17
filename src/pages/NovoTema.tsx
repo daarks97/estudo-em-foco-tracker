@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { useEstudos } from '@/contexts/EstudosContext';
+import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +15,11 @@ import { CalendarIcon, ArrowLeft } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { ptBR } from 'date-fns/locale';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const NovoTema = () => {
   const { categorias, adicionarTema } = useEstudos();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   const [titulo, setTitulo] = useState('');
@@ -24,25 +27,42 @@ const NovoTema = () => {
   const [dataEstudo, setDataEstudo] = useState<Date>(new Date());
   const [dataLimite, setDataLimite] = useState<Date | null>(null);
   const [prioridade, setPrioridade] = useState<'baixa' | 'media' | 'alta'>('media');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!titulo || !categoria) {
+    if (!user) {
+      toast.error("Você precisa estar logado para adicionar um tema.");
       return;
     }
     
-    adicionarTema({
-      titulo,
-      categoria,
-      dataEstudo,
-      dataLimite,
-      concluido: false,
-      dataConclusao: null,
-      prioridade
-    });
+    if (!titulo || !categoria) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
     
-    navigate('/');
+    setIsSubmitting(true);
+    
+    try {
+      await adicionarTema({
+        titulo,
+        categoria,
+        dataEstudo,
+        dataLimite,
+        concluido: false,
+        dataConclusao: null,
+        prioridade
+      });
+      
+      toast.success("Tema adicionado com sucesso!");
+      navigate('/');
+    } catch (error) {
+      console.error("Erro ao adicionar tema:", error);
+      toast.error("Ocorreu um erro ao adicionar o tema.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -167,8 +187,12 @@ const NovoTema = () => {
               </div>
               
               <div className="flex space-x-2 pt-4">
-                <Button type="submit" className="w-full bg-estudo-primary hover:bg-estudo-secondary">
-                  Adicionar Tema
+                <Button 
+                  type="submit" 
+                  className="w-full bg-estudo-primary hover:bg-estudo-secondary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Adicionando..." : "Adicionar Tema"}
                 </Button>
               </div>
             </form>

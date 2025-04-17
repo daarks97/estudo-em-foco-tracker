@@ -1,7 +1,10 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { TemaEstudo, Categoria, Revisao } from '@/types/estudos';
 import { addDays, isSameDay, isAfter, isBefore } from 'date-fns';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Dados iniciais para demonstração
 const categoriasIniciais: Categoria[] = [
@@ -69,90 +72,14 @@ const gerarRevisoes = (tema: Omit<TemaEstudo, 'id' | 'revisoes'>): Revisao[] => 
 
 // Gerando temas iniciais com datas relativas a hoje
 const hoje = new Date();
-const temasIniciais: TemaEstudo[] = [
-  {
-    id: '1',
-    titulo: 'Hipertensão Arterial',
-    categoria: '1',
-    dataEstudo: addDays(hoje, -10),
-    dataLimite: addDays(hoje, 20),
-    concluido: false,
-    dataConclusao: null,
-    prioridade: 'alta',
-    revisoes: []
-  },
-  {
-    id: '2',
-    titulo: 'Diabetes Mellitus',
-    categoria: '1',
-    dataEstudo: addDays(hoje, -35),
-    dataLimite: addDays(hoje, -5),
-    concluido: true,
-    dataConclusao: addDays(hoje, -8),
-    prioridade: 'alta',
-    revisoes: []
-  },
-  {
-    id: '3',
-    titulo: 'Apendicite Aguda',
-    categoria: '2',
-    dataEstudo: addDays(hoje, -2),
-    dataLimite: addDays(hoje, 15),
-    concluido: false,
-    dataConclusao: null,
-    prioridade: 'media',
-    revisoes: []
-  },
-  {
-    id: '4',
-    titulo: 'Cuidados pré-natais',
-    categoria: '4',
-    dataEstudo: addDays(hoje, -8),
-    dataLimite: addDays(hoje, 5),
-    concluido: false,
-    dataConclusao: null,
-    prioridade: 'media',
-    revisoes: []
-  },
-  {
-    id: '5',
-    titulo: 'Vacinação Infantil',
-    categoria: '3',
-    dataEstudo: hoje,
-    dataLimite: addDays(hoje, 20),
-    concluido: false,
-    dataConclusao: null,
-    prioridade: 'baixa',
-    revisoes: []
-  },
-  {
-    id: '6',
-    titulo: 'Epidemiologia',
-    categoria: '5',
-    dataEstudo: addDays(hoje, -20),
-    dataLimite: addDays(hoje, -10),
-    concluido: false,
-    dataConclusao: null,
-    prioridade: 'alta',
-    revisoes: []
-  },
-];
-
-// Atualizar temas iniciais com revisões
-temasIniciais.forEach(tema => {
-  const novasRevisoes = gerarRevisoes(tema);
-  novasRevisoes.forEach(revisao => {
-    revisao.temaId = tema.id;
-  });
-  tema.revisoes = novasRevisoes;
-});
+const temasIniciais: TemaEstudo[] = [];
 
 interface EstudosContextType {
   temas: TemaEstudo[];
   categorias: Categoria[];
   marcarConcluido: (id: string, concluido: boolean) => void;
   marcarRevisaoConcluida: (temaId: string, revisaoId: string, concluida: boolean, status?: 'sucesso' | 'incompleta') => void;
-  adicionarTema: (tema: Omit<TemaEstudo, 'id' | 'revisoes'>) => void;
+  adicionarTema: (tema: Omit<TemaEstudo, 'id' | 'revisoes'>) => Promise<void>;
   filtrarPorCategoria: (categoriaId: string | null) => void;
   filtrarPorPrioridade: (prioridade: 'baixa' | 'media' | 'alta' | null) => void;
   filtrarPorNivelAprendizado: (nivel: 'iniciado' | 'reforcando' | 'dominado' | null) => void;
@@ -179,17 +106,86 @@ interface EstudosContextType {
     statusRevisao?: 'sucesso' | 'incompleta' | null;
   }[];
   atualizarNivelAprendizado: (temaId: string, nivel: 'iniciado' | 'reforcando' | 'dominado') => void;
+  carregarTemas: () => Promise<void>;
 }
 
 const EstudosContext = createContext<EstudosContextType | undefined>(undefined);
 
 export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [temas, setTemas] = useState<TemaEstudo[]>(temasIniciais);
   const [categorias] = useState<Categoria[]>(categoriasIniciais);
   const [categoriaAtual, setCategoriaAtual] = useState<string | null>(null);
   const [prioridadeAtual, setPrioridadeAtual] = useState<'baixa' | 'media' | 'alta' | null>(null);
   const [nivelAprendizadoAtual, setNivelAprendizadoAtual] = useState<'iniciado' | 'reforcando' | 'dominado' | null>(null);
   const [temasFiltrados, setTemasFiltrados] = useState<TemaEstudo[]>(temas);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const carregarTemas = async () => {
+    if (!user) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('temas')
+        .select('*')
+        .eq('user_id', user.id);
+        
+      if (error) {
+        console.error('Erro ao carregar temas:', error);
+        toast.error('Erro ao carregar temas');
+        return;
+      }
+      
+      if (data) {
+        // Transformar os dados do formato do Supabase para o formato usado pelo app
+        const temasCarregados: TemaEstudo[] = data.map(tema => {
+          // Gerar revisões para o tema
+          const novasRevisoes = gerarRevisoes({
+            titulo: tema.titulo,
+            categoria: tema.categoria,
+            dataEstudo: new Date(tema.data_estudo),
+            dataLimite: tema.data_limite ? new Date(tema.data_limite) : null,
+            concluido: tema.concluido,
+            dataConclusao: tema.data_conclusao ? new Date(tema.data_conclusao) : null,
+            prioridade: tema.prioridade as 'baixa' | 'media' | 'alta',
+          });
+          
+          // Atualizar o temaId para as revisões
+          novasRevisoes.forEach(revisao => {
+            revisao.temaId = tema.id;
+          });
+          
+          return {
+            id: tema.id,
+            titulo: tema.titulo,
+            categoria: tema.categoria,
+            dataEstudo: new Date(tema.data_estudo),
+            dataLimite: tema.data_limite ? new Date(tema.data_limite) : null,
+            concluido: tema.concluido,
+            dataConclusao: tema.data_conclusao ? new Date(tema.data_conclusao) : null,
+            prioridade: tema.prioridade as 'baixa' | 'media' | 'alta',
+            nivelAprendizado: tema.nivel_aprendizado as 'iniciado' | 'reforcando' | 'dominado' | undefined,
+            revisoes: novasRevisoes
+          };
+        });
+        
+        setTemas(temasCarregados);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar temas:', error);
+      toast.error('Erro ao carregar temas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Carregar temas quando o componente montar ou o usuário mudar
+  useEffect(() => {
+    if (user) {
+      carregarTemas();
+    }
+  }, [user]);
 
   const filtrarPorCategoria = (categoriaId: string | null) => {
     setCategoriaAtual(categoriaId);
@@ -227,19 +223,45 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setTemasFiltrados(filtrados);
   }, [categoriaAtual, prioridadeAtual, nivelAprendizadoAtual, temas]);
 
-  const marcarConcluido = (id: string, concluido: boolean) => {
-    setTemas(prevTemas => prevTemas.map(tema => {
-      if (tema.id === id) {
-        return {
-          ...tema,
-          concluido,
-          dataConclusao: concluido ? new Date() : null
-        };
-      }
-      return tema;
-    }));
+  const marcarConcluido = async (id: string, concluido: boolean) => {
+    if (!user) return;
     
-    toast.success(concluido ? "Tema marcado como concluído!" : "Tema marcado como não concluído!");
+    const dataConclusao = concluido ? new Date() : null;
+    
+    try {
+      // Atualizar no Supabase
+      const { error } = await supabase
+        .from('temas')
+        .update({ 
+          concluido: concluido,
+          data_conclusao: dataConclusao
+        })
+        .eq('id', id)
+        .eq('user_id', user.id);
+        
+      if (error) {
+        console.error('Erro ao atualizar tema:', error);
+        toast.error('Erro ao atualizar tema');
+        return;
+      }
+      
+      // Atualizar estado local
+      setTemas(prevTemas => prevTemas.map(tema => {
+        if (tema.id === id) {
+          return {
+            ...tema,
+            concluido,
+            dataConclusao
+          };
+        }
+        return tema;
+      }));
+      
+      toast.success(concluido ? "Tema marcado como concluído!" : "Tema marcado como não concluído!");
+    } catch (error) {
+      console.error('Erro ao atualizar tema:', error);
+      toast.error('Erro ao atualizar tema');
+    }
   };
   
   const marcarRevisaoConcluida = (temaId: string, revisaoId: string, concluida: boolean, status?: 'sucesso' | 'incompleta') => {
@@ -276,37 +298,98 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  const atualizarNivelAprendizado = (temaId: string, nivel: 'iniciado' | 'reforcando' | 'dominado') => {
-    setTemas(prevTemas => prevTemas.map(tema => {
-      if (tema.id === temaId) {
-        return {
-          ...tema,
-          nivelAprendizado: nivel
-        };
-      }
-      return tema;
-    }));
+  const atualizarNivelAprendizado = async (temaId: string, nivel: 'iniciado' | 'reforcando' | 'dominado') => {
+    if (!user) return;
     
-    toast.success(`Nível de aprendizado atualizado para: ${nivel}`);
+    try {
+      // Atualizar no Supabase
+      const { error } = await supabase
+        .from('temas')
+        .update({ nivel_aprendizado: nivel })
+        .eq('id', temaId)
+        .eq('user_id', user.id);
+        
+      if (error) {
+        console.error('Erro ao atualizar nível de aprendizado:', error);
+        toast.error('Erro ao atualizar nível de aprendizado');
+        return;
+      }
+      
+      // Atualizar estado local
+      setTemas(prevTemas => prevTemas.map(tema => {
+        if (tema.id === temaId) {
+          return {
+            ...tema,
+            nivelAprendizado: nivel
+          };
+        }
+        return tema;
+      }));
+      
+      toast.success(`Nível de aprendizado atualizado para: ${nivel}`);
+    } catch (error) {
+      console.error('Erro ao atualizar nível de aprendizado:', error);
+      toast.error('Erro ao atualizar nível de aprendizado');
+    }
   };
 
-  const adicionarTema = (tema: Omit<TemaEstudo, 'id' | 'revisoes'>) => {
-    const id = Date.now().toString();
-    const novasRevisoes = gerarRevisoes(tema);
+  const adicionarTema = async (tema: Omit<TemaEstudo, 'id' | 'revisoes'>) => {
+    if (!user) {
+      toast.error("Usuário não autenticado");
+      return;
+    }
     
-    // Atualizar o temaId para as revisões
-    novasRevisoes.forEach(revisao => {
-      revisao.temaId = id;
-    });
-    
-    const novoTema: TemaEstudo = {
-      ...tema,
-      id,
-      revisoes: novasRevisoes
-    };
-    
-    setTemas(prevTemas => [...prevTemas, novoTema]);
-    toast.success("Novo tema adicionado com sucesso!");
+    try {
+      // Preparar o tema para inserção no Supabase
+      const temaParaInserir = {
+        titulo: tema.titulo,
+        categoria: tema.categoria,
+        data_estudo: tema.dataEstudo.toISOString(),
+        data_limite: tema.dataLimite ? tema.dataLimite.toISOString() : null,
+        concluido: tema.concluido,
+        data_conclusao: tema.dataConclusao ? tema.dataConclusao.toISOString() : null,
+        prioridade: tema.prioridade,
+        user_id: user.id
+      };
+      
+      // Inserir no Supabase
+      const { data, error } = await supabase
+        .from('temas')
+        .insert([temaParaInserir])
+        .select();
+        
+      if (error) {
+        console.error('Erro ao adicionar tema:', error);
+        toast.error('Erro ao adicionar tema');
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        const temaInserido = data[0];
+        const id = temaInserido.id;
+        
+        // Gerar revisões para o tema
+        const novasRevisoes = gerarRevisoes(tema);
+        
+        // Atualizar o temaId para as revisões
+        novasRevisoes.forEach(revisao => {
+          revisao.temaId = id;
+        });
+        
+        const novoTema: TemaEstudo = {
+          ...tema,
+          id,
+          revisoes: novasRevisoes
+        };
+        
+        // Atualizar o estado local
+        setTemas(prevTemas => [...prevTemas, novoTema]);
+        toast.success("Novo tema adicionado com sucesso!");
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar tema:', error);
+      toast.error('Erro ao adicionar tema');
+    }
   };
   
   // Função para obter revisões atrasadas
@@ -398,7 +481,8 @@ export const EstudosProvider: React.FC<{ children: React.ReactNode }> = ({ child
       temasFiltrados,
       obterRevisoesHoje,
       obterRevisoesAtrasadas,
-      atualizarNivelAprendizado
+      atualizarNivelAprendizado,
+      carregarTemas
     }}>
       {children}
     </EstudosContext.Provider>
